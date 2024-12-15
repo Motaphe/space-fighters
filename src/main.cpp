@@ -15,6 +15,7 @@
 #include "bn_sprite_items_enemy_ship.h"
 #include "bn_sprite_items_energy_orb.h"
 #include "bn_regular_bg_items_space_bg.h"
+#include "bn_regular_bg_items_start_bg.h"
 
 enum class GameState
 {
@@ -23,12 +24,11 @@ enum class GameState
     GAME_OVER
 };
 
-// Simple bounding-box collision (uses bn::abs() instead of .abs()):
 bool sprites_collide(const bn::sprite_ptr& a, const bn::sprite_ptr& b)
 {
     bn::fixed dx = bn::abs(a.x() - b.x());
     bn::fixed dy = bn::abs(a.y() - b.y());
-    bn::fixed collision_threshold = 16; // Adjust as needed for sprite size
+    bn::fixed collision_threshold = 16; // adjust to sprite sizes
     return (dx < collision_threshold) && (dy < collision_threshold);
 }
 
@@ -40,41 +40,41 @@ int main()
     bn::bg_palettes::set_brightness(0);
 
     GameState game_state = GameState::START_SCREEN;
-    bool start_prompt_visible = true;  // purely a boolean marker; no text displayed
 
-    bn::optional<bn::regular_bg_ptr> bg;
+    // We'll have two backgrounds:
+    bn::optional<bn::regular_bg_ptr> start_bg;
+    bn::optional<bn::regular_bg_ptr> main_bg;
+
     bn::optional<bn::sprite_ptr> player_ship;
-
     bn::vector<bn::sprite_ptr, 4> enemy_ships;
     bn::vector<bn::sprite_ptr, 4> orbs;
 
     int score = 0;
     int spawn_counter = 0;
-    const int spawn_interval = 60;  // frames between spawns
-
-    // Butano random generator
+    const int spawn_interval = 60;
     static bn::random rng;
+
+    // Create the START SCREEN background:
+    start_bg = bn::regular_bg_items::start_bg.create_bg(0, 0);
 
     while(true)
     {
         if(game_state == GameState::START_SCREEN)
         {
-            // Since we have no on-screen text, let's just blink a boolean marker
-            static int blink_counter = 0;
-            blink_counter++;
-            if(blink_counter > 30)
-            {
-                blink_counter = 0;
-                start_prompt_visible = !start_prompt_visible;
-                // Without text, this has no visible effect. It's just toggling a bool.
-            }
-
+            // Press START to proceed
             if(bn::keypad::start_pressed())
             {
                 game_state = GameState::PLAYING;
 
-                // Create background
-                bg = bn::regular_bg_items::space_bg.create_bg(0, 0);
+                // Hide the start screen BG
+                if(start_bg.has_value())
+                {
+                    start_bg->set_visible(false);
+                    start_bg.reset(); // not strictly necessary, but let's free it
+                }
+
+                // Create main background
+                main_bg = bn::regular_bg_items::space_bg.create_bg(0, 0);
 
                 // Create player sprite
                 player_ship = bn::sprite_items::player_ship.create_sprite(0, 50);
@@ -83,7 +83,7 @@ int main()
         }
         else if(game_state == GameState::PLAYING)
         {
-            // Player movement
+            // Movement
             if(player_ship.has_value())
             {
                 bn::fixed_point pos = player_ship->position();
@@ -105,13 +105,13 @@ int main()
                 }
             }
 
-            // Spawn enemies or orbs
+            // Spawning
             spawn_counter++;
             if(spawn_counter > spawn_interval)
             {
                 spawn_counter = 0;
-                bool spawn_enemy = rng.get_int(2); // yields 0 or 1
-                int random_x = rng.get_int(200) - 100; // range [-100..99]
+                bool spawn_enemy = rng.get_int(2);
+                int random_x = rng.get_int(200) - 100;
                 int top_y = -80;
 
                 if(spawn_enemy)
@@ -134,7 +134,7 @@ int main()
                 }
             }
 
-            // Move enemies/orbs downward
+            // Move / collisions
             for(auto& enemy : enemy_ships)
             {
                 enemy.set_y(enemy.y() + 1);
@@ -144,10 +144,9 @@ int main()
                 orb.set_y(orb.y() + 1);
             }
 
-            // Collision checks
             if(player_ship.has_value())
             {
-                // Check collision with enemies
+                // Collisions with enemies
                 for(int i = 0; i < enemy_ships.size(); i++)
                 {
                     if(sprites_collide(*player_ship, enemy_ships[i]))
@@ -156,8 +155,7 @@ int main()
                         break;
                     }
                 }
-
-                // Check collision with orbs
+                // Collisions with orbs
                 for(int i = 0; i < orbs.size(); i++)
                 {
                     if(sprites_collide(*player_ship, orbs[i]))
@@ -170,7 +168,7 @@ int main()
                 }
             }
 
-            // Cleanup off-screen sprites
+            // Cleanup off-screen
             for(int i = 0; i < enemy_ships.size(); i++)
             {
                 if(enemy_ships[i].y() > 90)
@@ -192,28 +190,21 @@ int main()
         }
         else if(game_state == GameState::GAME_OVER)
         {
-            // Hide everything
-            if(bg.has_value())
+            if(main_bg.has_value())
             {
-                bg->set_visible(false);
+                main_bg->set_visible(false);
             }
             if(player_ship.has_value())
             {
                 player_ship->set_visible(false);
             }
-            for(auto& e : enemy_ships)
-            {
-                e.set_visible(false);
-            }
+            for(auto& e : enemy_ships) { e.set_visible(false); }
             enemy_ships.clear();
 
-            for(auto& o : orbs)
-            {
-                o.set_visible(false);
-            }
+            for(auto& o : orbs) { o.set_visible(false); }
             orbs.clear();
 
-            // Without any text, we simply wait for START to reset
+            // Wait for START to reset
             while(true)
             {
                 bn::core::update();
@@ -221,7 +212,9 @@ int main()
                 {
                     score = 0;
                     game_state = GameState::START_SCREEN;
-                    start_prompt_visible = true;
+
+                    // Re-show start screen background
+                    start_bg = bn::regular_bg_items::start_bg.create_bg(0, 0);
                     break;
                 }
             }
