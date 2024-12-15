@@ -59,6 +59,17 @@ int main()
     const int spawn_interval = 60;
     static bn::random rng;
 
+    // Define movement speeds
+    bn::fixed enemy_fall_speed = 0.5; // Slower enemy fall speed
+    bn::fixed orb_fall_speed = 0.5;   // Slower orb fall speed
+    bn::fixed ship_move_speed = 0.5;  // Slower ship movement
+
+    // Define frame intervals for movement (optional)
+    const int enemy_move_interval = 2; // Move enemies every 2 frames
+    const int orb_move_interval = 2;   // Move orbs every 2 frames
+    int enemy_move_counter = 0;
+    int orb_move_counter = 0;
+
     // Create the START SCREEN background
     start_bg = bn::regular_bg_items::start_bg.create_bg(0, 0);
 
@@ -70,6 +81,10 @@ int main()
     bn::vector<bn::sprite_ptr, 32> score_text_sprites;         // Displays the current score
     bn::vector<bn::sprite_ptr, 32> game_over_text_sprites;     // Displays "GAME OVER"
     bn::vector<bn::sprite_ptr, 32> final_score_text_sprites;   // Displays the final score
+    bn::vector<bn::sprite_ptr, 32> text_sprites;              // For initial instructions
+
+    // Display initial instructions on screen
+    text_generator.generate(-96, -40, "Press: L", text_sprites); // Adjusted y-coordinate
 
     while(true)
     {
@@ -86,6 +101,9 @@ int main()
                     start_bg->set_visible(false);
                     start_bg.reset();
                 }
+
+                // Hide initial instruction texts
+                text_sprites.clear();
 
                 // Create main gameplay background
                 main_bg = bn::regular_bg_items::space_bg.create_bg(0, 0);
@@ -107,19 +125,19 @@ int main()
                 bn::fixed_point pos = player_ship->position();
                 if(bn::keypad::left_held() && pos.x() > -112)
                 {
-                    player_ship->set_x(pos.x() - 1);
+                    player_ship->set_x(pos.x() - ship_move_speed);
                 }
                 if(bn::keypad::right_held() && pos.x() < 112)
                 {
-                    player_ship->set_x(pos.x() + 1);
+                    player_ship->set_x(pos.x() + ship_move_speed);
                 }
                 if(bn::keypad::up_held() && pos.y() > -72)
                 {
-                    player_ship->set_y(pos.y() - 1);
+                    player_ship->set_y(pos.y() - ship_move_speed);
                 }
                 if(bn::keypad::down_held() && pos.y() < 72)
                 {
-                    player_ship->set_y(pos.y() + 1);
+                    player_ship->set_y(pos.y() + ship_move_speed);
                 }
             }
 
@@ -152,14 +170,28 @@ int main()
                 }
             }
 
-            // Move enemies and orbs downward
-            for(auto& enemy : enemy_ships)
+            // Increment movement counters
+            enemy_move_counter++;
+            orb_move_counter++;
+
+            // Move enemies downward every 'enemy_move_interval' frames
+            if(enemy_move_counter >= enemy_move_interval)
             {
-                enemy.set_y(enemy.y() + 1);
+                enemy_move_counter = 0; // Reset counter
+                for(auto& enemy : enemy_ships)
+                {
+                    enemy.set_y(enemy.y() + enemy_fall_speed);
+                }
             }
-            for(auto& orb : orbs)
+
+            // Move orbs downward every 'orb_move_interval' frames
+            if(orb_move_counter >= orb_move_interval)
             {
-                orb.set_y(orb.y() + 1);
+                orb_move_counter = 0; // Reset counter
+                for(auto& orb : orbs)
+                {
+                    orb.set_y(orb.y() + orb_fall_speed);
+                }
             }
 
             if(player_ship.has_value())
