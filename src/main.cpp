@@ -59,14 +59,14 @@ int main()
     const int spawn_interval = 60;
     static bn::random rng;
 
-    // Define movement speeds
-    bn::fixed enemy_fall_speed = 0.5; // Slower enemy fall speed
-    bn::fixed orb_fall_speed = 0.5;   // Slower orb fall speed
-    bn::fixed ship_move_speed = 0.5;  // Slower ship movement
+    // Define movement speeds (balanced)
+    bn::fixed enemy_fall_speed = 0.20; // Balanced enemy fall speed
+    bn::fixed orb_fall_speed = 0.20;   // Balanced orb fall speed
+    bn::fixed ship_move_speed = 0.20;  // Balanced ship movement
 
-    // Define frame intervals for movement (optional)
-    const int enemy_move_interval = 2; // Move enemies every 2 frames
-    const int orb_move_interval = 2;   // Move orbs every 2 frames
+    // Define frame intervals for movement (balanced)
+    const int enemy_move_interval = 3; // Move enemies every 3 frames
+    const int orb_move_interval = 3;   // Move orbs every 3 frames
     int enemy_move_counter = 0;
     int orb_move_counter = 0;
 
