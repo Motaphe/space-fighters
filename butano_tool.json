@@ -1,0 +1,45 @@
+{
+    // Sprites section:
+    "sprites": [
+        {
+            // 4bpp or 8bpp sprites go here. We'll assume 8bpp.
+            "regular_bg": false,
+            "items": [
+                {
+                    "source": "graphics/player_ship.bmp",
+                    "name": "bn_sprite_items_player_ship",
+                    "bpp_mode": "bpp_8",
+                    // Optional: reference an external JSON for advanced slicing/props
+                    "json": "graphics/player_ship.json"
+                },
+                {
+                    "source": "graphics/enemy_ship.bmp",
+                    "name": "bn_sprite_items_enemy_ship",
+                    "bpp_mode": "bpp_8",
+                    "json": "graphics/enemy_ship.json"
+                },
+                {
+                    "source": "graphics/energy_orb.bmp",
+                    "name": "bn_sprite_items_energy_orb",
+                    "bpp_mode": "bpp_8",
+                    "json": "graphics/energy_orb.json"
+                }
+            ]
+        }
+    ],
+
+    // Regular BGs section:
+    "regular_bgs": [
+        {
+            "items": [
+                {
+                    "source": "graphics/space_bg.bmp",
+                    "name": "bn_bg_items_space_bg",
+                    "bpp_mode": "bpp_8",
+                    // References your space_bg.json
+                    "json": "graphics/space_bg.json"
+                }
+            ]
+        }
+    ]
+}
