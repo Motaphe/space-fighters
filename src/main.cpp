@@ -63,7 +63,7 @@ int main()
     start_bg = bn::regular_bg_items::start_bg.create_bg(0, 0);
 
     // Initialize the text generator with your custom font sprite sheet
-    // Ensure that 'common::variable_8x8_sprite_font' is correctly defined
+    // Ensure that 'common::variable_8x8_sprite_font' is correctly defined in the 'common' namespace
     bn::sprite_text_generator text_generator(common::variable_8x8_sprite_font);
 
     // Declare vectors to store text sprites
@@ -94,9 +94,9 @@ int main()
                 player_ship = bn::sprite_items::player_ship.create_sprite(0, 50);
                 player_ship->set_z_order(1);
 
-                // Initialize the score display at the top-left corner
+                // Initialize the score display near the top-left corner
                 bn::string<16> initial_score_str = "Score: 0";
-                text_generator.generate(-140, 80, initial_score_str, score_text_sprites); // Adjust position as needed
+                text_generator.generate(-100, 60, initial_score_str, score_text_sprites); // x = -100, y = +60
             }
         }
         else if(game_state == GameState::PLAYING)
@@ -190,7 +190,7 @@ int main()
                         updated_score_str += bn::to_string<16>(score); // Specify MaxSize
 
                         // Generate new score sprites
-                        text_generator.generate(-140, 80, updated_score_str, score_text_sprites);
+                        text_generator.generate(-100, 60, updated_score_str, score_text_sprites); // x = -100, y = +60
 
                         // Remove the collected orb by swapping with the last and popping
                         orbs[i] = orbs.back();
@@ -251,14 +251,14 @@ int main()
             // Hide the score display
             score_text_sprites.clear();
 
-            // Create "GAME OVER" text centered on the screen
+            // Create "GAME OVER" text slightly below center
             bn::string<16> game_over_str = "GAME OVER";
-            text_generator.generate(0, 0, game_over_str, game_over_text_sprites); // Adjust position as needed
+            text_generator.generate(0, 20, game_over_str, game_over_text_sprites); // y = +20
 
-            // Create final score display below "GAME OVER"
+            // Create final score display directly below "GAME OVER"
             bn::string<16> final_score_str = "Final Score: ";
             final_score_str += bn::to_string<16>(score); // Specify MaxSize
-            text_generator.generate(0, -20, final_score_str, final_score_text_sprites); // Adjust position as needed
+            text_generator.generate(0, 0, final_score_str, final_score_text_sprites); // y = 0
 
             // Wait for START to reset the game
             while(true)
