@@ -9,8 +9,8 @@
 #include "bn_string.h"
 #include "bn_random.h"
 #include "bn_math.h"  // For bn::abs()
-
-// Include your auto-generated sprite/background headers:
+#include "bn_sprite_text_generator.h"            // For text rendering
+#include "common_variable_8x8_sprite_font.h"     // Your custom font header
 #include "bn_sprite_items_player_ship.h"
 #include "bn_sprite_items_enemy_ship.h"
 #include "bn_sprite_items_energy_orb.h"
@@ -24,11 +24,12 @@ enum class GameState
     GAME_OVER
 };
 
+// Function to detect collision between two sprites
 bool sprites_collide(const bn::sprite_ptr& a, const bn::sprite_ptr& b)
 {
     bn::fixed dx = bn::abs(a.x() - b.x());
     bn::fixed dy = bn::abs(a.y() - b.y());
-    bn::fixed collision_threshold = 16; // adjust to sprite sizes
+    bn::fixed collision_threshold = 16; // Adjust based on sprite sizes
     return (dx < collision_threshold) && (dy < collision_threshold);
 }
 
@@ -41,21 +42,34 @@ int main()
 
     GameState game_state = GameState::START_SCREEN;
 
-    // We'll have two backgrounds:
+    // Optional backgrounds
     bn::optional<bn::regular_bg_ptr> start_bg;
     bn::optional<bn::regular_bg_ptr> main_bg;
 
+    // Optional player sprite
     bn::optional<bn::sprite_ptr> player_ship;
+
+    // Vectors to hold enemy ships and energy orbs
     bn::vector<bn::sprite_ptr, 4> enemy_ships;
     bn::vector<bn::sprite_ptr, 4> orbs;
 
+    // Initialize score and spawn variables
     int score = 0;
     int spawn_counter = 0;
     const int spawn_interval = 60;
     static bn::random rng;
 
-    // Create the START SCREEN background:
+    // Create the START SCREEN background
     start_bg = bn::regular_bg_items::start_bg.create_bg(0, 0);
+
+    // Initialize the text generator with your custom font sprite sheet
+    // Ensure that 'common::variable_8x8_sprite_font' is correctly defined
+    bn::sprite_text_generator text_generator(common::variable_8x8_sprite_font);
+
+    // Declare vectors to store text sprites
+    bn::vector<bn::sprite_ptr, 32> score_text_sprites;         // Displays the current score
+    bn::vector<bn::sprite_ptr, 32> game_over_text_sprites;     // Displays "GAME OVER"
+    bn::vector<bn::sprite_ptr, 32> final_score_text_sprites;   // Displays the final score
 
     while(true)
     {
@@ -66,24 +80,28 @@ int main()
             {
                 game_state = GameState::PLAYING;
 
-                // Hide the start screen BG
+                // Hide and free the start screen background
                 if(start_bg.has_value())
                 {
                     start_bg->set_visible(false);
-                    start_bg.reset(); // not strictly necessary, but let's free it
+                    start_bg.reset();
                 }
 
-                // Create main background
+                // Create main gameplay background
                 main_bg = bn::regular_bg_items::space_bg.create_bg(0, 0);
 
-                // Create player sprite
+                // Create player ship sprite at initial position
                 player_ship = bn::sprite_items::player_ship.create_sprite(0, 50);
                 player_ship->set_z_order(1);
+
+                // Initialize the score display at the top-left corner
+                bn::string<16> initial_score_str = "Score: 0";
+                text_generator.generate(-140, 80, initial_score_str, score_text_sprites); // Adjust position as needed
             }
         }
         else if(game_state == GameState::PLAYING)
         {
-            // Movement
+            // Handle player movement
             if(player_ship.has_value())
             {
                 bn::fixed_point pos = player_ship->position();
@@ -105,13 +123,13 @@ int main()
                 }
             }
 
-            // Spawning
+            // Handle spawning of enemies and orbs
             spawn_counter++;
             if(spawn_counter > spawn_interval)
             {
                 spawn_counter = 0;
-                bool spawn_enemy = rng.get_int(2);
-                int random_x = rng.get_int(200) - 100;
+                bool spawn_enemy = rng.get_int(2); // 0 or 1
+                int random_x = rng.get_int(200) - 100; // Range: -100 to +99
                 int top_y = -80;
 
                 if(spawn_enemy)
@@ -134,7 +152,7 @@ int main()
                 }
             }
 
-            // Move / collisions
+            // Move enemies and orbs downward
             for(auto& enemy : enemy_ships)
             {
                 enemy.set_y(enemy.y() + 1);
@@ -146,7 +164,7 @@ int main()
 
             if(player_ship.has_value())
             {
-                // Collisions with enemies
+                // Check collisions with enemies
                 for(int i = 0; i < enemy_ships.size(); i++)
                 {
                     if(sprites_collide(*player_ship, enemy_ships[i]))
@@ -155,20 +173,34 @@ int main()
                         break;
                     }
                 }
-                // Collisions with orbs
+
+                // Check collisions with orbs
                 for(int i = 0; i < orbs.size(); i++)
                 {
                     if(sprites_collide(*player_ship, orbs[i]))
                     {
                         score += 10;
+
+                        // Update the score display
+                        // Clear existing score sprites
+                        score_text_sprites.clear();
+
+                        // Create updated score string with specified MaxSize
+                        bn::string<16> updated_score_str = "Score: ";
+                        updated_score_str += bn::to_string<16>(score); // Specify MaxSize
+
+                        // Generate new score sprites
+                        text_generator.generate(-140, 80, updated_score_str, score_text_sprites);
+
+                        // Remove the collected orb by swapping with the last and popping
                         orbs[i] = orbs.back();
                         orbs.pop_back();
-                        i--;
+                        i--; // Adjust index after removal
                     }
                 }
             }
 
-            // Cleanup off-screen
+            // Remove enemies that have moved off-screen
             for(int i = 0; i < enemy_ships.size(); i++)
             {
                 if(enemy_ships[i].y() > 90)
@@ -178,6 +210,8 @@ int main()
                     i--;
                 }
             }
+
+            // Remove orbs that have moved off-screen
             for(int i = 0; i < orbs.size(); i++)
             {
                 if(orbs[i].y() > 90)
@@ -190,6 +224,7 @@ int main()
         }
         else if(game_state == GameState::GAME_OVER)
         {
+            // Hide main background and player sprite
             if(main_bg.has_value())
             {
                 main_bg->set_visible(false);
@@ -198,24 +233,51 @@ int main()
             {
                 player_ship->set_visible(false);
             }
-            for(auto& e : enemy_ships) { e.set_visible(false); }
+
+            // Hide and clear all enemy ships
+            for(auto& e : enemy_ships)
+            {
+                e.set_visible(false);
+            }
             enemy_ships.clear();
 
-            for(auto& o : orbs) { o.set_visible(false); }
+            // Hide and clear all orbs
+            for(auto& o : orbs)
+            {
+                o.set_visible(false);
+            }
             orbs.clear();
 
-            // Wait for START to reset
+            // Hide the score display
+            score_text_sprites.clear();
+
+            // Create "GAME OVER" text centered on the screen
+            bn::string<16> game_over_str = "GAME OVER";
+            text_generator.generate(0, 0, game_over_str, game_over_text_sprites); // Adjust position as needed
+
+            // Create final score display below "GAME OVER"
+            bn::string<16> final_score_str = "Final Score: ";
+            final_score_str += bn::to_string<16>(score); // Specify MaxSize
+            text_generator.generate(0, -20, final_score_str, final_score_text_sprites); // Adjust position as needed
+
+            // Wait for START to reset the game
             while(true)
             {
                 bn::core::update();
+
                 if(bn::keypad::start_pressed())
                 {
+                    // Reset score and game state
                     score = 0;
                     game_state = GameState::START_SCREEN;
 
-                    // Re-show start screen background
+                    // Hide game over texts
+                    game_over_text_sprites.clear();
+                    final_score_text_sprites.clear();
+
+                    // Re-display the start screen background
                     start_bg = bn::regular_bg_items::start_bg.create_bg(0, 0);
-                    break;
+                    break; // Exit the GAME_OVER state loop
                 }
             }
         }
