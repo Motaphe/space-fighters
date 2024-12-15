@@ -75,8 +75,8 @@ int main()
     {
         if(game_state == GameState::START_SCREEN)
         {
-            // Press START to proceed
-            if(bn::keypad::start_pressed())
+            // Press L to proceed
+            if(bn::keypad::l_pressed())
             {
                 game_state = GameState::PLAYING;
 
@@ -189,7 +189,7 @@ int main()
                         bn::string<16> updated_score_str = "Score: ";
                         updated_score_str += bn::to_string<16>(score); // Specify MaxSize
 
-                        // Generate new score sprites
+                        // Generate new score sprites with adjusted x-coordinate
                         text_generator.generate(-100, 60, updated_score_str, score_text_sprites); // x = -100, y = +60
 
                         // Remove the collected orb by swapping with the last and popping
@@ -260,12 +260,12 @@ int main()
             final_score_str += bn::to_string<16>(score); // Specify MaxSize
             text_generator.generate(0, 0, final_score_str, final_score_text_sprites); // y = 0
 
-            // Wait for START to reset the game
+            // Wait for L to reset the game
             while(true)
             {
                 bn::core::update();
 
-                if(bn::keypad::start_pressed())
+                if(bn::keypad::l_pressed())
                 {
                     // Reset score and game state
                     score = 0;
