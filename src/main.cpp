@@ -84,13 +84,13 @@ int main()
     bn::vector<bn::sprite_ptr, 32> text_sprites;              // For initial instructions
 
     // Display initial instructions on screen
-    text_generator.generate(-96, -40, "Press: L", text_sprites); // Adjusted y-coordinate
+    text_generator.generate(-96, -40, "Press: I", text_sprites); // Adjusted y-coordinate
 
     while(true)
     {
         if(game_state == GameState::START_SCREEN)
         {
-            // Press L to proceed
+            // Press I to proceed
             if(bn::keypad::l_pressed())
             {
                 game_state = GameState::PLAYING;
